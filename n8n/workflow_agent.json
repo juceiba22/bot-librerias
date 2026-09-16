@@ -1,0 +1,92 @@
+﻿{
+  "name": "Yenny-El Ateneo - Bot Asistente Comercial (demo)",
+  "nodes": [
+    {
+      "id": "chatTrigger1",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300],
+      "webhookId": "yenny-chat-demo-4471",
+      "parameters": { "public": true, "options": {} }
+    },
+    {
+      "id": "model1",
+      "name": "Anthropic Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [200, 500],
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "claude-sonnet-4-5-20250929" },
+        "options": {}
+      },
+      "credentials": { "anthropicApi": { "id": "Jxbbx5luUP0NB5VS", "name": "Yenny El Ateneo - Anthropic Claude" } }
+    },
+    {
+      "id": "memory1",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [400, 500],
+      "parameters": { "sessionIdType": "customKey", "sessionKey": "={{ $json.sessionId }}", "contextWindowLength": 10 }
+    },
+    {
+      "id": "toolCatalogo",
+      "name": "Buscar Catalogo",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [600, 500],
+      "parameters": {
+        "name": "buscar_catalogo","description": "Busca productos en el catalogo de Yenny-El Ateneo (libros y musica) por categoria o palabra clave. Devuelve nombre, marca, precio y URL del producto.",
+        "source": "database",
+        "workflowId": { "__rl": true, "mode": "list", "value": "S1zndtCX8pOsthjo" },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "categoria": "={{ $fromAI('categoria', 'Categoria del catalogo: musica, mas_vendidos, libros_infantil, libros_policial, libros_economia, libros_tecnologia. Puede ir vacio.', 'string', '') }}",
+            "busqueda": "={{ $fromAI('busqueda', 'Palabra clave del titulo o tema que pidio el cliente. Puede ir vacio.', 'string', '') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "toolSucursales",
+      "name": "Buscar Sucursales",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [800, 500],
+      "parameters": {
+        "name": "buscar_sucursales","description": "Busca sucursales de Yenny-El Ateneo por barrio, ciudad o zona mencionada por el cliente.",
+        "source": "database",
+        "workflowId": { "__rl": true, "mode": "list", "value": "sIMputW8Hy6aGHgy" },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "zona": "={{ $fromAI('zona', 'Barrio, ciudad o zona que menciono el cliente para buscar sucursales cercanas', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "agent1",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [400, 300],
+      "parameters": {
+        "promptType": "auto",
+        "options": {
+          "systemMessage": "Sos el asistente comercial de Yenny - El Ateneo, la cadena de librerias mas grande de Argentina, atendiendo por WhatsApp. Tu tono es calido, cercano y profesional, como un buen vendedor de libreria. Nunca inventes productos, precios ni sucursales que no te devuelvan las herramientas. Segui esta logica de conversacion en capas, sin ser rigido ni robotico: 1) Si es un cliente nuevo, pregunta primero en que zona/barrio esta para poder sugerirle sucursales cercanas usando la herramienta Buscar Sucursales. 2) Pregunta sobre sus gustos de lectura o musica y usa la herramienta Buscar Catalogo para sugerirle 2 o 3 productos concretos con precio. 3) Cuando sea natural, mencionale medios de pago y promociones: Banco Nacion los sabados, 10% de ahorro (tope $10.000 por compra) mas 3 cuotas sin interes con Visa y Mastercard Credito, valido online y en sucursales. Se breve, como en un chat real de WhatsApp, no uses parrafos largos."
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": { "main": [[ { "node": "AI Agent", "type": "main", "index": 0 } ]] },
+    "Anthropic Chat Model": { "ai_languageModel": [[ { "node": "AI Agent", "type": "ai_languageModel", "index": 0 } ]] },
+    "Window Buffer Memory": { "ai_memory": [[ { "node": "AI Agent", "type": "ai_memory", "index": 0 } ]] },
+    "Buscar Catalogo": { "ai_tool": [[ { "node": "AI Agent", "type": "ai_tool", "index": 0 } ]] },
+    "Buscar Sucursales": { "ai_tool": [[ { "node": "AI Agent", "type": "ai_tool", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

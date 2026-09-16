@@ -1,0 +1,9 @@
+# Secretos - nunca commitear
+*_key.txt
+*_creds.txt
+.env
+.env.*
+
+# Sistema
+.DS_Store
+Thumbs.db
