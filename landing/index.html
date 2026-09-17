@@ -139,7 +139,25 @@
   }
   .btn-ghost:hover{border-color:var(--ink-soft);}
   .nav-cta{display:flex; align-items:center; gap:18px;}
-  .nav-toggle{display:none;}
+  .nav-toggle{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    width:38px; height:38px;
+    flex-shrink:0;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    font-size:1.05rem;
+    padding:0;
+  }
+  .nav-toggle:hover{border-color:var(--ink-soft);}
+  .nav-toggle:focus-visible, a:focus-visible, button:focus-visible{
+    outline:2px solid var(--oxblood);
+    outline-offset:2px;
+  }
 
   /* ---------- hero ---------- */
   .hero{
@@ -357,7 +375,32 @@
     .step:first-child{border-top:none; padding-top:0;}
     .feature-grid{grid-template-columns:1fr;}
     .trust-grid{grid-template-columns:1fr; gap:28px;}
-    nav.links{display:none;}
+
+    .nav-row{flex-wrap:wrap; row-gap:0;}
+    .brand{order:1;}
+    .nav-toggle{display:inline-flex; order:2;}
+    .nav-cta{order:3;}
+    nav.links{
+      display:none;
+      order:4;
+      width:100%;
+      flex-direction:column;
+      gap:2px;
+      padding-block:10px 16px;
+    }
+    nav.links.open{display:flex;}
+    nav.links a{
+      padding:11px 6px;
+      border-top:1px solid var(--line);
+      font-size:0.95rem;
+    }
+  }
+
+  @media (max-width: 480px){
+    .nav-cta .btn{padding:9px 14px; font-size:0.85rem;}
+    .hero-actions{flex-direction:column; align-items:stretch;}
+    .hero-actions .btn{justify-content:center;}
+    .foot-row{flex-direction:column; align-items:flex-start; gap:6px;}
   }
 
   @media (prefers-reduced-motion: no-preference){
@@ -374,7 +417,8 @@
 <header class="nav">
   <div class="wrap nav-row">
     <div class="brand">Jorge Luis <span class="mark">IA</span></div>
-    <nav class="links">
+    <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menú">☰</button>
+    <nav class="links" id="navLinks">
       <a href="#como-funciona">Cómo funciona</a>
       <a href="#beneficios">Beneficios</a>
       <a href="#contacto">Contacto</a>
@@ -530,3 +574,27 @@
     <div>El librero digital de tu librería · © 2026</div>
   </div>
 </footer>
+
+<script>
+(function(){
+  var btn = document.getElementById('navToggle');
+  var links = document.getElementById('navLinks');
+  if(!btn || !links) return;
+  function close(){
+    links.classList.remove('open');
+    btn.setAttribute('aria-expanded','false');
+    btn.textContent = '☰';
+  }
+  btn.addEventListener('click', function(){
+    var open = links.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? '✕' : '☰';
+  });
+  links.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', close);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') close();
+  });
+})();
+</script>
