@@ -1,13 +1,13 @@
-# Jorge Luis
+# Leonardo
 
-Bot asistente comercial con IA para librerías, por WhatsApp — demo construida sobre el catálogo real de Yenny-El Ateneo. Producto: **Solapa**.
+Bot asistente comercial con IA para librerías, por WhatsApp — demo construida sobre el catálogo real de Yenny-El Ateneo. Producto: **Leonardo**.
 
 ## Estructura
 
 - `scraping/` — scripts PowerShell que extraen el catálogo real del sitio (música, más vendidos, libros por categoría) vía los bloques `ld+json` embebidos en cada página, y los CSV resultantes.
 - `db/` — esquema de Postgres (`schema.sql`) y los seeds SQL: catálogo de productos (`seed_productos.sql`, `seed_libros.sql`) y sucursales (`sucursales.sql`).
 - `n8n/` — definición del workflow del AI Agent (`workflow_agent.json`): Chat Trigger + Claude + memoria + dos tools (Postgres catálogo y sucursales).
-- `landing/` — landing page del producto (`solapa-landing.html`), publicada como Claude Artifact.
+- `landing/` — landing page del producto (`index.html`), publicada como Claude Artifact.
 
 ## Infraestructura
 
