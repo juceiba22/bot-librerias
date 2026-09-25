@@ -7,3 +7,7 @@
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Paginas guardadas del navegador (pesadas, solo sirven de insumo local)
+/*.html
+/*_files/
