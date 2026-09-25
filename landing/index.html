@@ -445,6 +445,14 @@
     .soon-actions .btn{width:100%;}
     .brand .mark{display:none;}
   }
+  .hero-more{margin:20px 0 0; font-size:0.9rem; color:var(--ink-soft);}
+  .hero-more a{color:var(--oxblood); font-weight:600; text-decoration:none; border-bottom:1px solid currentColor;}
+  .hero-more a:hover{color:var(--oxblood-strong);}
+  .cta-actions{margin-top:28px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+  .cta-actions .btn{margin-top:0;}
+  @media (max-width: 480px){
+    .cta-actions .btn{width:100%;}
+  }
 </style>
 
 <header class="nav">
@@ -473,6 +481,7 @@
         <a class="btn btn-primary btn-lg" href="https://wa.me/5491173566723?text=Hola%2C%20Leonardo" target="_blank" rel="noopener">Chatear con Leonardo</a>
         <a class="btn btn-ghost btn-lg" href="#como-funciona">Ver cómo funciona</a>
       </div>
+      <p class="hero-more">¿Buscás también contenido para tus redes? <a href="cm-automatico.html">Conocé el CM automático →</a></p>
     </div>
 
     <div class="hero-divider"></div>
@@ -621,14 +630,17 @@
     <img class="cta-logo" src="leonardo-logo.jpg" alt="Leonardo, bot asistente para librerías" width="150" height="150">
     <h2>¿Charlamos sobre tu librería?</h2>
     <p>Contanos cómo trabajás hoy y armamos una demo con tu propio catálogo.</p>
-    <a class="btn btn-primary btn-lg" href="https://wa.me/5491166814208?text=Hola%2C%20estuve%20explorando%20el%20producto%20Leonardo%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s" target="_blank" rel="noopener">Escribinos</a>
+    <div class="cta-actions">
+      <a class="btn btn-primary btn-lg" href="https://wa.me/5491166814208?text=Hola%2C%20estuve%20explorando%20el%20producto%20Leonardo%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s" target="_blank" rel="noopener">Escribinos</a>
+      <a class="btn btn-ghost btn-lg" href="https://wa.me/5491166814208?text=Hola%2C%20quiero%20consultar%20por%20el%20CM%20autom%C3%A1tico%20de%20Leonardo" target="_blank" rel="noopener">Consultar por el CM automático</a>
+    </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap foot-row">
     <div class="brand">Leonardo</div>
-    <div>El librero digital de tu librería · © 2026 · <a href="./privacidad.html" style="color:inherit;">Política de privacidad</a></div>
+    <div>El librero digital de tu librería · © 2026 · <a href="./cm-automatico.html" style="color:inherit;">CM automático</a> · <a href="./privacidad.html" style="color:inherit;">Política de privacidad</a></div>
   </div>
 </footer>
 
