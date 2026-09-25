@@ -1,0 +1,363 @@
+<title>CM Automático</title>
+<link rel="icon" href="leonardo-emblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F4EE;
+    --paper-2:#E9E9DE;
+    --ink:#1B1C15;
+    --ink-soft:#54574A;
+    --oxblood:#7A2230;
+    --oxblood-strong:#5C1A24;
+    --brass:#9C7233;
+    --line:#D7D4C3;
+    --chip-bg:#FBFAF4;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#131309; --paper-2:#1D1D12; --ink:#ECE9DA; --ink-soft:#AFAC98;
+      --oxblood:#D0596A; --oxblood-strong:#E27D8B; --brass:#D8AD69;
+      --line:#33331F; --chip-bg:#1A1A10;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#131309; --paper-2:#1D1D12; --ink:#ECE9DA; --ink-soft:#AFAC98;
+    --oxblood:#D0596A; --oxblood-strong:#E27D8B; --brass:#D8AD69;
+    --line:#33331F; --chip-bg:#1A1A10;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Public Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:"Newsreader", Georgia, serif;
+    font-weight:500;
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+    margin:0;
+  }
+  em{font-style:italic; color:var(--oxblood);}
+  a{color:inherit;}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--oxblood); outline-offset:2px;}
+  .wrap{max-width:1120px; margin-inline:auto; padding-inline:24px;}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--oxblood);
+    margin:0;
+  }
+
+  /* nav */
+  header.nav{
+    position:sticky;
+    top:env(safe-area-inset-top,0px);
+    z-index:20;
+    background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-block:14px;}
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-family:"Newsreader", serif; font-size:1.3rem; font-weight:600;
+    text-decoration:none;
+  }
+  .brand img{width:34px; height:34px; border-radius:8px;}
+  .brand .mark{
+    font-family:"IBM Plex Mono", monospace; font-size:0.65rem; color:var(--brass);
+    letter-spacing:0.1em; border:1px solid var(--line); border-radius:3px; padding:2px 5px;
+  }
+  .nav-cta{display:flex; align-items:center; gap:18px;}
+  .back-link{font-size:0.9rem; color:var(--ink-soft); text-decoration:none;}
+  .back-link:hover{color:var(--ink);}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    font-family:"Public Sans", sans-serif; font-weight:600; font-size:0.92rem;
+    padding:11px 20px; border-radius:4px; text-decoration:none;
+    border:1px solid transparent; cursor:pointer;
+  }
+  .btn-primary{background:var(--oxblood); color:#FBF8F1;}
+  .btn-primary:hover{background:var(--oxblood-strong);}
+  .btn-ghost{border-color:var(--line); color:var(--ink); background:transparent;}
+  .btn-ghost:hover{border-color:var(--ink-soft);}
+  .btn-lg{padding:13px 24px; font-size:0.98rem;}
+
+  .badge{
+    display:inline-block;
+    font-family:"IBM Plex Mono", monospace; font-size:0.68rem; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--brass);
+    border:1px solid var(--brass); border-radius:3px; padding:3px 8px;
+  }
+
+  /* hero */
+  .hero{padding-block:72px 80px; border-bottom:1px solid var(--line);}
+  .hero-grid{display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center;}
+  .hero h1{font-size:clamp(2.1rem, 4.2vw, 3.2rem); line-height:1.07; margin-top:16px;}
+  .hero .lead{margin:20px 0 0; font-size:1.08rem; color:var(--ink-soft); max-width:48ch;}
+  .hero-actions{margin-top:32px; display:flex; gap:14px; flex-wrap:wrap;}
+  .hero-note{margin:16px 0 0; font-size:0.82rem; color:var(--ink-soft);}
+
+  /* carousel mock */
+  .car{min-width:0;}
+  .strip{display:flex; gap:12px; overflow:hidden; padding:2px;}
+  .slide{
+    flex:0 0 68%;
+    aspect-ratio:4 / 5;
+    border-radius:12px;
+    container-type:inline-size;
+    position:relative;
+  }
+  .slide-main{
+    background:#1F201B; color:#F3EFE6;
+    padding:7cqw;
+    display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow:0 1px 2px rgba(27,28,21,0.12);
+  }
+  .slide-main .tag{font-family:"IBM Plex Mono", monospace; font-size:9px; font-size:3cqw; letter-spacing:0.14em; color:#D0596A; text-transform:uppercase;}
+  .slide-main .hook{font-family:"Newsreader", Georgia, serif; font-weight:500; font-size:22px; font-size:8.6cqw; line-height:1.12; margin:0;}
+  .slide-main .sub{font-size:11px; font-size:3.6cqw; color:#CFC9BA; margin:2cqw 0 0;}
+  .slide-main .book{font-family:"Newsreader", Georgia, serif; font-style:italic; font-size:16px; font-size:5.6cqw; margin:0;}
+  .slide-main .author{font-size:11px; font-size:3.4cqw; color:#CFC9BA; margin:0.6cqw 0 0;}
+  .slide-main .pager{font-family:"IBM Plex Mono", monospace; font-size:9px; font-size:2.8cqw; color:#8F8A7C; margin:0;}
+  .slide-ghost{background:var(--paper-2); border:1px solid var(--line); padding:8cqw; display:flex; flex-direction:column; gap:3cqw; justify-content:center;}
+  .slide-ghost i{display:block; height:2.6cqw; border-radius:99px; background:var(--line);}
+  .slide-ghost i:nth-child(1){width:82%; height:4.2cqw;}
+  .slide-ghost i:nth-child(2){width:64%; height:4.2cqw; margin-bottom:3cqw;}
+  .slide-ghost i:nth-child(4){width:90%;}
+  .slide-ghost i:nth-child(5){width:56%;}
+  .car-cap{margin:12px 0 0; font-size:0.8rem; color:var(--ink-soft); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .car-cap span:first-child{font-family:"IBM Plex Mono", monospace; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase;}
+
+  /* sections */
+  section.block{padding-block:72px; border-bottom:1px solid var(--line);}
+  section.alt{background:var(--paper-2);}
+  .head{max-width:58ch;}
+  .head h2{font-size:clamp(1.7rem,3.2vw,2.3rem); margin-top:10px;}
+  .head p.intro{margin:14px 0 0; color:var(--ink-soft);}
+
+  .steps{margin-top:44px; display:grid; grid-template-columns:repeat(3,1fr);}
+  .step{border-left:1px solid var(--line); padding:0 28px 0 26px;}
+  .step:first-child{border-left:none; padding-left:0;}
+  .step .num{font-family:"IBM Plex Mono", monospace; font-size:0.78rem; color:var(--brass); letter-spacing:0.08em;}
+  .step h3{font-size:1.28rem; margin:10px 0;}
+  .step p{margin:0; color:var(--ink-soft); font-size:0.94rem;}
+
+  .feature-grid{
+    margin-top:40px; display:grid; grid-template-columns:repeat(3,1fr);
+    gap:1px; background:var(--line); border:1px solid var(--line);
+  }
+  .feature{background:var(--paper-2); padding:26px 24px;}
+  .feature h3{font-family:"Public Sans", sans-serif; font-weight:700; font-size:1rem; margin:0 0 8px;}
+  .feature p{margin:0; font-size:0.89rem; color:var(--ink-soft);}
+
+  .pair-grid{display:grid; grid-template-columns:0.9fr 1.1fr; gap:56px; align-items:center;}
+  .pair-grid h2{font-size:clamp(1.6rem,3vw,2.1rem); margin-top:10px;}
+  .pair-grid p{color:var(--ink-soft); margin:14px 0 0;}
+  .flow{display:flex; flex-direction:column; gap:10px;}
+  .node{border:1px solid var(--line); background:var(--chip-bg); border-radius:10px; padding:16px 18px;}
+  .node b{display:block; font-family:"Newsreader", serif; font-size:1.12rem; font-weight:600;}
+  .node span{font-size:0.86rem; color:var(--ink-soft);}
+  .node.mid{border-style:dashed; background:transparent;}
+  .node.me{border-color:var(--oxblood);}
+  .arrow{text-align:center; color:var(--brass); font-family:"IBM Plex Mono", monospace; font-size:0.9rem; line-height:1;}
+
+  .status{
+    border:1px solid var(--line); border-radius:12px; background:var(--paper-2);
+    padding:26px 28px; display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:start;
+  }
+  .status h3{font-size:1.25rem; margin:0 0 8px;}
+  .status p{margin:0; color:var(--ink-soft); font-size:0.94rem; max-width:64ch;}
+
+  .cta{padding-block:80px; text-align:center;}
+  .cta h2{font-size:clamp(1.9rem,4vw,2.6rem); max-width:22ch; margin-inline:auto;}
+  .cta p{color:var(--ink-soft); margin:14px auto 0; max-width:46ch;}
+  .cta-actions{margin-top:28px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+
+  footer{border-top:1px solid var(--line); padding-block:28px;}
+  .foot-row{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; font-size:0.82rem; color:var(--ink-soft);}
+  .foot-row .brand{font-size:1rem;}
+  .foot-row .brand img{width:26px; height:26px; border-radius:6px;}
+
+  @media (max-width: 860px){
+    .hero{padding-block:48px 56px;}
+    .hero-grid{grid-template-columns:1fr; gap:40px;}
+    .steps{grid-template-columns:1fr; gap:28px;}
+    .step{border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:22px;}
+    .step:first-child{border-top:none; padding-top:0;}
+    .feature-grid{grid-template-columns:1fr;}
+    .pair-grid{grid-template-columns:1fr; gap:32px;}
+    section.block{padding-block:56px;}
+  }
+  @media (max-width: 480px){
+    .back-link{display:none;}
+    .hero-actions .btn, .cta-actions .btn{width:100%;}
+    .status{grid-template-columns:1fr;}
+  }
+</style>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="./"><img src="leonardo-emblem.png" alt="" width="34" height="34">Leonardo <span class="mark">IA</span></a>
+    <div class="nav-cta">
+      <a class="back-link" href="./">← Volver a Leonardo</a>
+      <a class="btn btn-primary" href="https://wa.me/5491166814208?text=Hola%2C%20quiero%20consultar%20por%20el%20CM%20autom%C3%A1tico%20de%20Leonardo" target="_blank" rel="noopener">Consultar</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="badge">En desarrollo · Complemento de Leonardo</span>
+      <h1>De la portada de un libro al carrusel de Instagram, <em>sin abrir un editor.</em></h1>
+      <p class="lead">CM Automático toma la foto de una portada, reconoce el libro, redacta una reseña sin spoilers y arma un carrusel de cinco diapositivas listo para redes. Vos revisás, ajustás y publicás.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="https://wa.me/5491166814208?text=Hola%2C%20quiero%20consultar%20por%20el%20CM%20autom%C3%A1tico%20de%20Leonardo" target="_blank" rel="noopener">Consultar por el CM automático</a>
+        <a class="btn btn-ghost btn-lg" href="https://autom-redes-librerias.vercel.app/" target="_blank" rel="noopener">Ver la demo</a>
+      </div>
+      <p class="hero-note">Producto en desarrollo. La demo usa datos de ejemplo.</p>
+    </div>
+
+    <div class="car">
+      <div class="strip" aria-hidden="true">
+        <div class="slide slide-main">
+          <p class="tag">Recomendación editorial</p>
+          <div>
+            <p class="hook">¿Por qué esta historia no deja dormir a sus lectores?</p>
+            <p class="sub">Reseña literaria sin spoilers</p>
+          </div>
+          <div>
+            <p class="book">Cien años de soledad</p>
+            <p class="author">de Gabriel García Márquez</p>
+            <p class="pager" style="margin-top:3cqw;">1 / 5</p>
+          </div>
+        </div>
+        <div class="slide slide-ghost"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="slide slide-ghost"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <p class="car-cap"><span>Ejemplo de la demo</span><span>Formato 4:5 · 1080×1350 px</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="como-funciona">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Cómo funciona</p>
+      <h2>Tres pasos, del escáner a la publicación.</h2>
+      <p class="intro">Cada libro nuevo que entra a la librería puede convertirse en una pieza para tus redes, sin pasar por un diseñador ni redactar desde cero.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="num">01 — Subí</span>
+        <h3>Una foto de la portada</h3>
+        <p>Sacás la foto o subís el escaneo (JPG, PNG o WEBP, hasta 25 MB). También podés cargar un PDF o pegar el texto directamente.</p>
+      </div>
+      <div class="step">
+        <span class="num">02 — Generá</span>
+        <h3>La IA arma el carrusel</h3>
+        <p>Identifica título y autor, redacta una reseña sin spoilers con una cita destacada y maqueta cinco diapositivas de 1080×1350 px.</p>
+      </div>
+      <div class="step">
+        <span class="num">03 — Publicá</span>
+        <h3>Revisás y salís al aire</h3>
+        <p>Ajustás cada diapositiva en tiempo real. Después descargás las imágenes, copiás el texto del posteo o lo publicás en tus redes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Qué incluye</p>
+      <h2>Contenido editorial, no solo una plantilla con texto.</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature">
+        <h3>Reconoce la portada</h3>
+        <p>Detecta título y autor a partir de la imagen, y deja editables el género y la editorial.</p>
+      </div>
+      <div class="feature">
+        <h3>Reseña sin spoilers</h3>
+        <p>Un texto breve con gancho y cita destacada, pensado para invitar a leer sin contar el final.</p>
+      </div>
+      <div class="feature">
+        <h3>Formato Instagram 4:5</h3>
+        <p>Cinco diapositivas de 1080×1350 px, con diagramación y síntesis cromática automáticas.</p>
+      </div>
+      <div class="feature">
+        <h3>Edición antes de publicar</h3>
+        <p>Cambiás el gancho, el cuerpo y la cita de cada diapositiva y ves el resultado al instante.</p>
+      </div>
+      <div class="feature">
+        <h3>Control de calidad</h3>
+        <p>Filtro antiplagio, citas verificadas y normalización de ISBN-13 para que el catálogo quede prolijo.</p>
+      </div>
+      <div class="feature">
+        <h3>Exportá o publicá</h3>
+        <p>Descargá las diapositivas en PNG o SVG, copiá el texto del posteo, o publicá en Instagram, Facebook y WhatsApp Business.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap pair-grid">
+    <div>
+      <p class="eyebrow">Junto a Leonardo</p>
+      <h2>Uno atrae. El otro atiende.</h2>
+      <p>Leonardo responde por WhatsApp a quien ya quiere comprar: busca en tu catálogo, indica la sucursal y cuenta las promos. El CM automático se ocupa de que llegue más gente, con un carrusel por cada libro que querés mover.</p>
+      <p>Son productos pensados para complementarse: el que ve un libro en tus redes y escribe, se encuentra con un asistente que le contesta al instante.</p>
+    </div>
+    <div class="flow" aria-label="Circuito entre el CM automático y Leonardo">
+      <div class="node"><b>CM automático</b><span>Carruseles con reseña en Instagram y Facebook</span></div>
+      <div class="arrow">↓</div>
+      <div class="node mid"><b>Clientes con ganas de leer</b><span>Ven el libro y escriben a la librería</span></div>
+      <div class="arrow">↓</div>
+      <div class="node me"><b>Leonardo</b><span>Atiende por WhatsApp: catálogo, sucursales y promos</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt">
+  <div class="wrap">
+    <div class="status">
+      <span class="badge">En desarrollo</span>
+      <div>
+        <h3>Qué es hoy y qué viene</h3>
+        <p>Hoy hay una demo navegable que muestra el flujo completo con datos de ejemplo: las cuentas, sedes y actividad que aparecen conectadas son ilustrativas. Si te interesa para tu librería, escribinos y lo charlamos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <h2>¿Lo querés para tu librería?</h2>
+    <p>Contanos cuántos libros nuevos entran por mes y en qué redes publicás, y armamos una demo con tus propias portadas.</p>
+    <div class="cta-actions">
+      <a class="btn btn-primary btn-lg" href="https://wa.me/5491166814208?text=Hola%2C%20quiero%20consultar%20por%20el%20CM%20autom%C3%A1tico%20de%20Leonardo" target="_blank" rel="noopener">Consultar por el CM automático</a>
+      <a class="btn btn-ghost btn-lg" href="https://autom-redes-librerias.vercel.app/" target="_blank" rel="noopener">Ver la demo</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <a class="brand" href="./"><img src="leonardo-emblem.png" alt="" width="26" height="26">Leonardo</a>
+    <div>CM Automático, complemento de Leonardo · © 2026 · <a href="./privacidad.html" style="color:inherit;">Política de privacidad</a></div>
+  </div>
+</footer>

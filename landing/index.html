@@ -416,6 +416,34 @@
   .brand-emblem{width:34px; height:34px; border-radius:8px; align-self:center;}
   img.phone-avatar{object-fit:cover; border-radius:8px; flex-shrink:0;}
   .cta-logo{display:block; width:150px; height:auto; margin:0 auto 24px; border-radius:16px;}
+  .soon{padding-block:72px; background:var(--paper-2); border-bottom:1px solid var(--line);}
+  .soon-grid{display:grid; grid-template-columns:1.1fr 0.9fr; gap:56px; align-items:center;}
+  .soon .badge{
+    display:inline-block; font-family:"IBM Plex Mono", monospace; font-size:0.68rem;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--brass);
+    border:1px solid var(--brass); border-radius:3px; padding:3px 8px;
+  }
+  .soon h2{font-size:clamp(1.7rem,3.2vw,2.3rem); margin-top:14px; max-width:20ch;}
+  .soon p{color:var(--ink-soft); margin:14px 0 0; max-width:52ch;}
+  .soon-actions{margin-top:26px; display:flex; gap:14px; flex-wrap:wrap;}
+  .mini-car{display:flex; gap:10px; overflow:hidden; padding:2px; min-width:0;}
+  .mini-slide{
+    flex:0 0 62%; aspect-ratio:4 / 5; border-radius:10px; container-type:inline-size;
+    background:#1F201B; color:#F3EFE6; padding:7cqw;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .mini-slide .t{font-family:"IBM Plex Mono", monospace; font-size:9px; font-size:3cqw; letter-spacing:0.14em; text-transform:uppercase; color:#D0596A; margin:0;}
+  .mini-slide .h{font-family:"Newsreader", Georgia, serif; font-size:20px; font-size:8.6cqw; line-height:1.12; margin:0; color:#F3EFE6; max-width:none;}
+  .mini-slide .b{font-family:"Newsreader", Georgia, serif; font-style:italic; font-size:14px; font-size:5.6cqw; margin:0; color:#CFC9BA; max-width:none;}
+  .mini-slide.ghost{background:var(--chip-bg); border:1px solid var(--line);}
+  @media (max-width: 860px){
+    .soon{padding-block:56px;}
+    .soon-grid{grid-template-columns:1fr; gap:36px;}
+    .mini-car{max-width:460px;}
+  }
+  @media (max-width: 480px){
+    .soon-actions .btn{width:100%;}
+  }
 </style>
 
 <header class="nav">
@@ -425,6 +453,7 @@
     <nav class="links" id="navLinks">
       <a href="#como-funciona">Cómo funciona</a>
       <a href="#beneficios">Beneficios</a>
+      <a href="#cm-automatico">CM automático</a>
       <a href="#contacto">Contacto</a>
     </nav>
     <div class="nav-cta">
@@ -561,6 +590,28 @@
       <li><span>🔐</span><span><b>Tu número de WhatsApp.</b> Leonardo contesta desde el WhatsApp Business que ya usás hoy, sin pedirle a tus clientes que aprendan algo nuevo.</span></li>
       <li><span>🧩</span><span><b>A tu medida.</b> Sucursales, categorías y promociones se cargan según cómo trabaja tu librería, no según una plantilla genérica.</span></li>
     </ul>
+  </div>
+</section>
+
+<section class="soon" id="cm-automatico">
+  <div class="wrap soon-grid">
+    <div>
+      <span class="badge">Producto en desarrollo</span>
+      <h2>Consultá también por el <em>CM automático</em></h2>
+      <p>Subís la portada de un libro y obtenés un carrusel listo para Instagram: reseña sin spoilers y cinco diapositivas en formato 4:5. Un complemento para Leonardo: el contenido atrae a los lectores y él los atiende por WhatsApp.</p>
+      <div class="soon-actions">
+        <a class="btn btn-primary" href="cm-automatico.html">Conocer el CM automático</a>
+        <a class="btn btn-ghost" href="https://wa.me/5491166814208?text=Hola%2C%20quiero%20consultar%20por%20el%20CM%20autom%C3%A1tico%20de%20Leonardo" target="_blank" rel="noopener">Consultar</a>
+      </div>
+    </div>
+    <div class="mini-car" aria-hidden="true">
+      <div class="mini-slide">
+        <p class="t">Recomendación editorial</p>
+        <p class="h">¿Por qué esta historia no deja dormir a sus lectores?</p>
+        <p class="b">Cien años de soledad</p>
+      </div>
+      <div class="mini-slide ghost"></div>
+    </div>
   </div>
 </section>
 
