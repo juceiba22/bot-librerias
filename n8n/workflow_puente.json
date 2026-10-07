@@ -1,0 +1,17 @@
+{
+  "name": "Leonardo - Mensaje puente (utilitario)",
+  "nodes": [
+    {"id":"trig1","name":"Execute Workflow Trigger","type":"n8n-nodes-base.executeWorkflowTrigger","typeVersion":1.1,"position":[0,300],"parameters":{"inputSource":"passthrough"}},
+    {"id":"haiku1","name":"Redactar puente (Haiku)","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[240,300],"onError":"continueRegularOutput","parameters":{"method":"POST","url":"https://api.anthropic.com/v1/messages","authentication":"predefinedCredentialType","nodeCredentialType":"anthropicApi","sendHeaders":true,"headerParameters":{"parameters":[{"name":"anthropic-version","value":"2023-06-01"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 40, temperature: 0.7, system: 'Sos Leonardo, asistente de una cadena de librerias, y charlas por WhatsApp. El cliente acaba de escribir y vas a tardar unos segundos en buscar la respuesta. Escribi UN solo mensaje de espera, muy corto (maximo 12 palabras), calido y en espanol rioplatense con voseo, que muestre que entendiste lo que pidio y que lo estas buscando. Reglas: no menciones titulos, autores, precios, stock ni sucursales; no hagas preguntas; no saludes ni te presentes; no prometas nada salvo que estas buscando. Devolve solo el texto del mensaje, sin comillas.', messages: [{ role: 'user', content: $json.chatInput }] }) }}","options":{"timeout":6000}},"credentials":{"anthropicApi":{"id":"Jxbbx5luUP0NB5VS","name":"Yenny El Ateneo - Anthropic Claude"}}},
+    {"id":"set1","name":"Texto del puente","type":"n8n-nodes-base.set","typeVersion":3.4,"position":[480,300],"parameters":{"assignments":{"assignments":[{"id":"b1","name":"puente","type":"string","value":"={{ (($json.content && $json.content[0] && $json.content[0].text) || '').trim() }}"}]},"options":{}}},
+    {"id":"if1","name":"Hay texto","type":"n8n-nodes-base.if","typeVersion":2,"position":[700,300],"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"loose"},"conditions":[{"leftValue":"={{ $json.puente }}","rightValue":"","operator":{"type":"string","operation":"notEmpty","singleValue":true}}],"combinator":"and"}}},
+    {"id":"send1","name":"Enviar puente por WhatsApp","type":"n8n-nodes-base.whatsApp","typeVersion":1,"position":[920,280],"onError":"continueRegularOutput","parameters":{"resource":"message","operation":"send","phoneNumberId":"1322008814328155","recipientPhoneNumber":"={{ $('Execute Workflow Trigger').first().json.fromNumber }}","textBody":"={{ $json.puente }}"},"credentials":{"whatsAppApi":{"id":"3DcUeVFZlgEIWCi3","name":"Bot Librerias - WhatsApp API"}}}
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main":[[{"node":"Redactar puente (Haiku)","type":"main","index":0}]]},
+    "Redactar puente (Haiku)": {"main":[[{"node":"Texto del puente","type":"main","index":0}]]},
+    "Texto del puente": {"main":[[{"node":"Hay texto","type":"main","index":0}]]},
+    "Hay texto": {"main":[[{"node":"Enviar puente por WhatsApp","type":"main","index":0}],[]]}
+  },
+  "settings": {"executionOrder":"v1"}
+}
