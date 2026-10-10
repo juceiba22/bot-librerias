@@ -56,29 +56,22 @@
     {
       "id": "typingInd",
       "name": "Indicador escribiendo",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
       "position": [
         440,
         100
       ],
       "onError": "continueRegularOutput",
       "parameters": {
-        "method": "POST",
-        "url": "https://graph.facebook.com/v22.0/1322008814328155/messages",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "whatsAppApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', status: 'read', message_id: $json.messages[0].id, typing_indicator: { type: 'text' } }) }}",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "79CnjSiYD0uLR9pU"
+        },
         "options": {
-          "timeout": 4000
-        }
-      },
-      "credentials": {
-        "whatsAppApi": {
-          "id": "3DcUeVFZlgEIWCi3",
-          "name": "Bot Librerias - WhatsApp API"
+          "waitForSubWorkflow": false
         }
       }
     },
@@ -129,7 +122,7 @@
       "onError": "continueRegularOutput",
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH palabras AS (SELECT unnest(string_to_array(lower(regexp_replace($1::text, '[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ ]', ' ', 'g')), ' ')) AS p), r AS (SELECT nombre, marca, precio, moneda, url_producto FROM productos WHERE EXISTS (SELECT 1 FROM palabras WHERE length(p) > 2 AND to_tsvector('spanish', nombre || ' ' || coalesce(marca,'') || ' ' || replace(segmento_demo,'_',' ')) @@ plainto_tsquery('spanish', p)) LIMIT 5) SELECT $2::text AS \"fromNumber\", $2::text AS \"sessionId\", $1::text AS \"chatInput\", coalesce((SELECT json_agg(r) FROM r), '[]'::json) AS catalogo;",
+        "query": "WITH palabras AS (SELECT DISTINCT p FROM (SELECT unnest(string_to_array(lower(regexp_replace($1::text, '[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ ]', ' ', 'g')), ' ')) AS p) x WHERE length(p) > 2 AND p !~ '^[0-9]+$' AND p <> ALL (ARRAY['quiero','busco','buscando','necesito','tenes','tenés','tienen','tiene','tenga','hay','libro','libros','regalo','regalar','años','año','chico','chica','chicos','chicas','nene','nena','algo','alguno','alguna','cuanto','cuánto','precio','sale','cuesta','favor','gracias','hola','buenas','buenos','dias','días','tardes','noches','recomendas','recomendás','recomendar','mostrar','mostrame','decime','quisiera','gustaria','gustaría','queria','quería','podes','podés','pueden','ejemplo','tipo','cosa','cosas','soy','dije'])), r AS (SELECT pr.nombre, pr.marca, pr.precio, pr.moneda, pr.url_producto, count(*) AS score FROM productos pr JOIN palabras w ON to_tsvector('spanish', pr.nombre || ' ' || coalesce(pr.marca,'') || ' ' || replace(pr.segmento_demo,'_',' ')) @@ plainto_tsquery('spanish', w.p) GROUP BY pr.nombre, pr.marca, pr.precio, pr.moneda, pr.url_producto ORDER BY score DESC LIMIT 5), s AS (SELECT DISTINCT su.nombre FROM sucursales su JOIN palabras w ON length(w.p) > 3 AND to_tsvector('spanish', su.nombre) @@ plainto_tsquery('spanish', w.p) LIMIT 5) SELECT $2::text AS \"fromNumber\", $2::text AS \"sessionId\", $1::text AS \"chatInput\", coalesce((SELECT json_agg(json_build_object('nombre', nombre, 'marca', marca, 'precio', precio, 'moneda', moneda, 'url_producto', url_producto) ORDER BY score DESC) FROM r), '[]'::json) AS catalogo, coalesce((SELECT json_agg(s) FROM s), '[]'::json) AS sucursales;",
         "options": {
           "queryReplacement": "={{ [ $('Preparar Mensaje').first().json.chatInput, $('Preparar Mensaje').first().json.fromNumber ] }}"
         }
@@ -153,8 +146,8 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "mode": "list",
-          "value": "claude-sonnet-4-5-20250929"
+          "mode": "id",
+          "value": "claude-haiku-4-5-20251001"
         },
         "options": {}
       },
@@ -246,9 +239,10 @@
         "promptType": "define",
         "text": "={{ $('Preparar Mensaje').first().json.chatInput }}",
         "options": {
-          "systemMessage": "=Sos Leonardo, un asistente de ventas para librerias que atiende a los clientes por WhatsApp. Tu tono es calido, cercano y profesional, como un buen librero de mostrador: escuchas antes de recomendar y te gusta lo que hacen. En el primer mensaje de una conversacion nueva presentate brevemente como Leonardo. Si el cliente te pregunta directamente si sos una persona o un bot, deci la verdad: sos un asistente virtual de la libreria. Nunca inventes productos, precios ni sucursales que no te devuelvan las herramientas.\n\nCategorias reales disponibles en el catalogo: musica, mas vendidos, libros infantiles, policial/thriller, ficcion general, clasicos, economia, tecnologia. Si el cliente pide algo que no encaja exacto en estas categorias, buscalo igual con la herramienta usando una palabra clave simple (ej. una palabra del genero o del titulo) antes de asumir que no hay resultados. Proba primero con la palabra mas simple y general posible (ej 'ficcion' en vez de 'novela de ficcion contemporanea'). Si de verdad no hay resultados, decilo con naturalidad ('no lo tengo cargado en este momento') en vez de excusas tipo 'problema tecnico', y ofrece una alternativa cercana del catalogo real.\n\nSegui esta logica de conversacion en capas, sin ser rigido ni robotico: 1) Si es un cliente nuevo, pregunta primero en que zona/barrio esta para poder sugerirle sucursales cercanas usando la herramienta Buscar Sucursales. 2) Pregunta sobre sus gustos de lectura o musica y usa la herramienta Buscar Catalogo para sugerirle 2 o 3 productos concretos con precio. 3) Cuando sea natural, mencionale medios de pago y promociones: Banco Nacion los sabados, 10% de ahorro (tope $10.000 por compra) mas 3 cuotas sin interes con Visa y Mastercard Credito, valido online y en sucursales. Se breve, como en un chat real de WhatsApp, no uses parrafos largos.\n\nRESULTADOS_PREVIOS_DEL_CATALOGO (buscados automaticamente con las palabras del ultimo mensaje del cliente; cada item tiene nombre, marca, precio, moneda y url_producto): {{ JSON.stringify($json.catalogo || []) }}\nSi hay resultados relevantes para lo que pidio el cliente, usalos directamente para recomendar, sin llamar a buscar_catalogo. Si la lista esta vacia o no tiene relacion con el pedido (por ejemplo un saludo o una pregunta sobre sucursales), ignorala. Llama a buscar_catalogo solo si necesitas buscar con otra palabra o categoria."
+          "systemMessage": "=Sos Leonardo, un asistente de ventas para librerias que atiende a los clientes por WhatsApp. Tu tono es calido, cercano y profesional, como un buen librero de mostrador: escuchas antes de recomendar y te gusta lo que hacen. En el primer mensaje de una conversacion nueva presentate brevemente como Leonardo. Si el cliente te pregunta directamente si sos una persona o un bot, deci la verdad: sos un asistente virtual de la libreria. Nunca inventes productos, precios ni sucursales que no te devuelvan las herramientas.\n\nCategorias reales disponibles en el catalogo: musica, mas vendidos, libros infantiles, policial/thriller, ficcion general, clasicos, economia, tecnologia. Si el cliente pide algo que no encaja exacto en estas categorias, buscalo igual con la herramienta usando una palabra clave simple (ej. una palabra del genero o del titulo) antes de asumir que no hay resultados. Proba primero con la palabra mas simple y general posible (ej 'ficcion' en vez de 'novela de ficcion contemporanea'). Si de verdad no hay resultados, decilo con naturalidad ('no lo tengo cargado en este momento') en vez de excusas tipo 'problema tecnico', y ofrece una alternativa cercana del catalogo real.\n\nSegui esta logica de conversacion en capas, sin ser rigido ni robotico: 1) Si es un cliente nuevo, pregunta primero en que zona/barrio esta para poder sugerirle sucursales cercanas usando la herramienta Buscar Sucursales. 2) Pregunta sobre sus gustos de lectura o musica y usa la herramienta Buscar Catalogo para sugerirle 2 o 3 productos concretos con precio. 3) Cuando sea natural, mencionale medios de pago y promociones: Banco Nacion los sabados, 10% de ahorro (tope $10.000 por compra) mas 3 cuotas sin interes con Visa y Mastercard Credito, valido online y en sucursales. Se breve, como en un chat real de WhatsApp, no uses parrafos largos.\n\nRESULTADOS_PREVIOS_DEL_CATALOGO (buscados automaticamente con las palabras del ultimo mensaje del cliente; cada item tiene nombre, marca, precio, moneda y url_producto): {{ JSON.stringify($json.catalogo || []) }}\nSi hay resultados relevantes para lo que pidio el cliente, usalos directamente para recomendar, sin llamar a buscar_catalogo. Si algun resultado no tiene relacion con el pedido (por ejemplo coincide por una palabra suelta), descartalo. Si la lista esta vacia, la busqueda ya probo con todas las palabras del cliente: decile con naturalidad que no lo tenes cargado y ofrece una alternativa que ya conozcas de la conversacion o preguntale por otros gustos, SIN llamar a la herramienta. Solo llama a buscar_catalogo, una unica vez, si se te ocurre un sinonimo claramente distinto del tema que pidio.\n\nSUCURSALES_PREVIAS (buscadas automaticamente con las palabras del ultimo mensaje del cliente; cada item tiene el nombre de la sucursal): {{ JSON.stringify($json.sucursales || []) }}\nSi el cliente menciono una zona y hay sucursales en la lista, usalas directamente para decirle cuales tiene cerca, sin llamar a buscar_sucursales. Si la lista esta vacia o el cliente no hablo de zonas, ignorala. Llama a buscar_sucursales solo si necesitas buscar con otra palabra.\n\nFORMATO DE RESPUESTA: escribi mensajes cortos, de hasta 40 palabras, con una sola pregunta al final. Cuando pases un link de producto, escribi la URL sola, sin formato markdown (WhatsApp no lo interpreta). Para resaltar usa *negrita* con un solo asterisco a cada lado (nunca doble asterisco, ni titulos, ni listas con guiones largos)."
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "id": "waSend1",
@@ -258,7 +252,7 @@
       "typeVersion": 1,
       "position": [
         1040,
-        260
+        180
       ],
       "parameters": {
         "resource": "message",
@@ -281,7 +275,7 @@
       "typeVersion": 2.4,
       "position": [
         1040,
-        180
+        340
       ],
       "onError": "continueRegularOutput",
       "parameters": {
@@ -297,54 +291,25 @@
       }
     },
     {
-      "id": "ifBusq",
-      "name": "Es consulta de productos",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
+      "id": "waErr1",
+      "name": "Responder error por WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
       "position": [
-        820,
-        120
+        1040,
+        480
       ],
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose"
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ ($json.catalogo || []).length }}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "puente1",
-      "name": "Enviar mensaje puente",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        1020,
-        60
-      ],
-      "onError": "continueRegularOutput",
-      "parameters": {
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "bC1gfB7ISexQgebH"
-        },
-        "options": {
-          "waitForSubWorkflow": false
+        "resource": "message",
+        "operation": "send",
+        "phoneNumberId": "1322008814328155",
+        "recipientPhoneNumber": "={{ $('Preparar Mensaje').first().json.fromNumber }}",
+        "textBody": "Perdón, se me complicó un momento de mi lado. ¿Me lo repetís, por favor?"
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "3DcUeVFZlgEIWCi3",
+          "name": "Bot Librerias - WhatsApp API"
         }
       }
     }
@@ -392,7 +357,7 @@
       "main": [
         [
           {
-            "node": "Es consulta de productos",
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -409,6 +374,13 @@
           },
           {
             "node": "Registrar Conversacion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder error por WhatsApp",
             "type": "main",
             "index": 0
           }
@@ -454,35 +426,6 @@
           {
             "node": "AI Agent",
             "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Es consulta de productos": {
-      "main": [
-        [
-          {
-            "node": "Enviar mensaje puente",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Enviar mensaje puente": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
             "index": 0
           }
         ]

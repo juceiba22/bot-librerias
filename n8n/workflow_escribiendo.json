@@ -1,0 +1,11 @@
+{
+  "name": "Leonardo - Indicador escribiendo (utilitario)",
+  "nodes": [
+    {"id":"trig1","name":"Execute Workflow Trigger","type":"n8n-nodes-base.executeWorkflowTrigger","typeVersion":1.1,"position":[0,300],"parameters":{"inputSource":"passthrough"}},
+    {"id":"typing1","name":"Marcar leido y escribiendo","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[240,300],"onError":"continueRegularOutput","parameters":{"method":"POST","url":"https://graph.facebook.com/v22.0/1322008814328155/messages","authentication":"predefinedCredentialType","nodeCredentialType":"whatsAppApi","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({ messaging_product: 'whatsapp', status: 'read', message_id: $json.messages[0].id, typing_indicator: { type: 'text' } }) }}","options":{"timeout":4000}},"credentials":{"whatsAppApi":{"id":"3DcUeVFZlgEIWCi3","name":"Bot Librerias - WhatsApp API"}}}
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main":[[{"node":"Marcar leido y escribiendo","type":"main","index":0}]]}
+  },
+  "settings": {"executionOrder":"v1"}
+}
