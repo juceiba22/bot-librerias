@@ -33,9 +33,12 @@ partes.push(
 if (d.preguntar) {
   // negocio con varios tipos de cliente y todavia no sabemos cual es
   partes.push(
-    'TODAVÍA NO SABÉS QUÉ TIPO DE CLIENTE ES. Saludá, presentate y preguntale con naturalidad cuál es, sin armar un menú numerado. ' +
-    'Los tipos de cliente que atendés son: ' + perfiles.map(p => p.nombre).join('; ') + '. ' +
-    'No recomiendes productos todavía y hacé una sola pregunta.'
+    'TODAVÍA NO SABÉS QUÉ TIPO DE CLIENTE ES, y no podés ayudarlo bien hasta saberlo. Tu respuesta tiene que hacer solo dos cosas: ' +
+    '1) saludar y presentarte en una frase como Leonardo, asistente de ' + n.nombre + '; ' +
+    '2) preguntarle cuál de estos tipos de cliente es: ' + perfiles.map(p => p.nombre).join('; ') + '. ' +
+    'Formulá la pregunta con naturalidad, sin menú numerado, y terminá el mensaje con esa pregunta. ' +
+    'Aunque el cliente haya dicho otra cosa ("empecemos de nuevo", un saludo o un pedido), ignorá la conversación anterior: ' +
+    'no preguntes "qué necesitás", no recomiendes productos ni retomes temas previos.'
   );
   partes.push('FORMATO: mensajes de hasta 40 palabras. Podés usar algún emoji, con moderación.');
   return [{ json: { systemPrompt: partes.join('\n\n') } }];
