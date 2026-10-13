@@ -91,7 +91,7 @@
               "id": "a1",
               "name": "chatInput",
               "type": "string",
-              "value": "={{ $json.messages[0].text.body }}"
+              "value": "={{ ($json.messages[0].text.body.replace(/#[A-Za-z0-9_]+/g, '').trim()) || 'Hola' }}"
             },
             {
               "id": "a2",
@@ -104,6 +104,12 @@
               "name": "fromNumber",
               "type": "string",
               "value": "={{ $json.messages[0].from }}"
+            },
+            {
+              "id": "a4",
+              "name": "rawInput",
+              "type": "string",
+              "value": "={{ $json.messages[0].text.body }}"
             }
           ]
         },
@@ -112,19 +118,19 @@
     },
     {
       "id": "prefetch1",
-      "name": "Buscar en catalogo (previo)",
+      "name": "Buscar datos del mensaje",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
-        620,
+        1780,
         260
       ],
       "onError": "continueRegularOutput",
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH palabras AS (SELECT DISTINCT p FROM (SELECT unnest(string_to_array(lower(regexp_replace($1::text, '[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ ]', ' ', 'g')), ' ')) AS p) x WHERE length(p) > 2 AND p !~ '^[0-9]+$' AND p <> ALL (ARRAY['quiero','busco','buscando','necesito','tenes','tenés','tienen','tiene','tenga','hay','libro','libros','regalo','regalar','años','año','chico','chica','chicos','chicas','nene','nena','algo','alguno','alguna','cuanto','cuánto','precio','sale','cuesta','favor','gracias','hola','buenas','buenos','dias','días','tardes','noches','recomendas','recomendás','recomendar','mostrar','mostrame','decime','quisiera','gustaria','gustaría','queria','quería','podes','podés','pueden','ejemplo','tipo','cosa','cosas','soy','dije'])), r AS (SELECT pr.nombre, pr.marca, pr.precio, pr.moneda, pr.url_producto, count(*) AS score FROM productos pr JOIN palabras w ON to_tsvector('spanish', pr.nombre || ' ' || coalesce(pr.marca,'') || ' ' || replace(pr.segmento_demo,'_',' ')) @@ plainto_tsquery('spanish', w.p) GROUP BY pr.nombre, pr.marca, pr.precio, pr.moneda, pr.url_producto ORDER BY score DESC LIMIT 5), s AS (SELECT DISTINCT su.nombre FROM sucursales su JOIN palabras w ON length(w.p) > 3 AND to_tsvector('spanish', su.nombre) @@ plainto_tsquery('spanish', w.p) LIMIT 5) SELECT $2::text AS \"fromNumber\", $2::text AS \"sessionId\", $1::text AS \"chatInput\", coalesce((SELECT json_agg(json_build_object('nombre', nombre, 'marca', marca, 'precio', precio, 'moneda', moneda, 'url_producto', url_producto) ORDER BY score DESC) FROM r), '[]'::json) AS catalogo, coalesce((SELECT json_agg(s) FROM s), '[]'::json) AS sucursales;",
+        "query": "WITH palabras AS (SELECT DISTINCT p FROM (SELECT unnest(string_to_array(lower(regexp_replace($1::text, '[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ ]', ' ', 'g')), ' ')) AS p) x WHERE length(p) > 2 AND p !~ '^[0-9]+$' AND p <> ALL (ARRAY['quiero','busco','buscando','necesito','tenes','tenés','tienen','tiene','tenga','hay','libro','libros','regalo','regalar','años','año','chico','chica','chicos','chicas','nene','nena','algo','alguno','alguna','cuanto','cuánto','precio','sale','cuesta','favor','gracias','hola','buenas','buenos','dias','días','tardes','noches','recomendas','recomendás','recomendar','mostrar','mostrame','decime','quisiera','gustaria','gustaría','queria','quería','podes','podés','pueden','ejemplo','tipo','cosa','cosas','soy','dije','sucursal','sucursales','local','locales','donde','dónde','retirar','retiro','horario','horarios','cerca'])), codigos AS (SELECT DISTINCT (regexp_matches(regexp_replace($1::text, '[-\\s]', '', 'g'), '(\\d{13}|\\d{10})', 'g'))[1] AS d), hits AS (SELECT pr.id, 1 AS w FROM productos pr JOIN palabras w ON to_tsvector('spanish', pr.nombre || ' ' || coalesce(pr.marca,'') || ' ' || coalesce(pr.editorial,'') || ' ' || replace(pr.segmento_demo,'_',' ') || ' ' || coalesce(pr.descripcion,'')) @@ plainto_tsquery('spanish', w.p) WHERE pr.negocio_id = $3::int AND pr.canal = ANY(string_to_array($4::text, ',')) UNION ALL SELECT pr.id, 100 FROM productos pr WHERE pr.negocio_id = $3::int AND pr.canal = ANY(string_to_array($4::text, ',')) AND pr.isbn IN (SELECT d FROM codigos)), r AS (SELECT pr.nombre, pr.marca, pr.editorial, pr.canal, pr.segmento_demo AS categoria, pr.precio, pr.stock, pr.url_producto, left(coalesce(pr.descripcion, ''), 220) AS descripcion, sum(h.w) AS score FROM hits h JOIN productos pr ON pr.id = h.id GROUP BY pr.id ORDER BY score DESC, pr.nombre LIMIT 5), s AS (SELECT su.nombre, su.direccion, su.telefono, su.whatsapp FROM sucursales su WHERE su.negocio_id = $3::int AND 'retail' = ANY(string_to_array($4::text, ',')) AND ($1::text ~* '(sucursal|local|donde|dónde|direcci|ubicad|ubicaci|retir|horario|cerca|queda)' OR EXISTS (SELECT 1 FROM palabras w WHERE length(w.p) > 3 AND to_tsvector('spanish', su.nombre || ' ' || coalesce(su.direccion,'')) @@ plainto_tsquery('spanish', w.p))) ORDER BY su.nombre LIMIT 10) SELECT coalesce((SELECT json_agg(json_build_object('nombre', nombre, 'marca', marca, 'editorial', editorial, 'canal', canal, 'categoria', categoria, 'precio', precio, 'stock', stock, 'url_producto', url_producto, 'descripcion', descripcion) ORDER BY score DESC) FROM r), '[]'::json) AS catalogo, coalesce((SELECT json_agg(s) FROM s), '[]'::json) AS sucursales;",
         "options": {
-          "queryReplacement": "={{ [ $('Preparar Mensaje').first().json.chatInput, $('Preparar Mensaje').first().json.fromNumber ] }}"
+          "queryReplacement": "={{ [ $('Preparar Mensaje').first().json.chatInput, $('Preparar Mensaje').first().json.fromNumber, $('Resolver negocio').first().json.id, (($('Definir perfil').first().json.perfil && $('Definir perfil').first().json.perfil.canales) || ['retail']).join(',') ] }}"
         }
       },
       "credentials": {
@@ -140,8 +146,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        640,
-        500
+        1860,
+        520
       ],
       "parameters": {
         "model": {
@@ -164,66 +170,13 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        820,
-        500
+        2040,
+        520
       ],
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Preparar Mensaje').first().json.sessionId }}",
+        "sessionKey": "={{ $('Preparar Mensaje').first().json.sessionId + ':' + $('Resolver negocio').first().json.slug }}",
         "contextWindowLength": 10
-      }
-    },
-    {
-      "id": "toolCatalogo",
-      "name": "Buscar Catalogo",
-      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
-      "typeVersion": 2,
-      "position": [
-        1000,
-        500
-      ],
-      "parameters": {
-        "name": "buscar_catalogo",
-        "description": "Busca productos en el catalogo de la libreria (libros y musica) por categoria o palabra clave. Devuelve nombre, marca, precio y URL del producto.",
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "list",
-          "value": "S1zndtCX8pOsthjo"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "categoria": "={{ $fromAI('categoria', 'Categoria o tema del catalogo a buscar: musica, mas_vendidos, libros_infantil, libros_policial, libros_economia, libros_tecnologia. Puede ir vacio.', 'string', '') }}",
-            "busqueda": "={{ $fromAI('busqueda', 'Palabra clave del titulo o tema que pidio el cliente', 'string', '') }}"
-          }
-        }
-      }
-    },
-    {
-      "id": "toolSucursales",
-      "name": "Buscar Sucursales",
-      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
-      "typeVersion": 2,
-      "position": [
-        1180,
-        500
-      ],
-      "parameters": {
-        "name": "buscar_sucursales",
-        "description": "Busca sucursales de la libreria por barrio, ciudad o zona mencionada por el cliente.",
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "list",
-          "value": "sIMputW8Hy6aGHgy"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "zona": "={{ $fromAI('zona', 'Barrio, ciudad o zona que menciono el cliente para buscar sucursales cercanas', 'string') }}"
-          }
-        }
       }
     },
     {
@@ -232,14 +185,14 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        820,
+        2000,
         260
       ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $('Preparar Mensaje').first().json.chatInput }}",
         "options": {
-          "systemMessage": "=Sos Leonardo, un asistente de ventas para librerias que atiende a los clientes por WhatsApp. Tu tono es calido, cercano y profesional, como un buen librero de mostrador: escuchas antes de recomendar y te gusta lo que hacen. En el primer mensaje de una conversacion nueva presentate brevemente como Leonardo. Si el cliente te pregunta directamente si sos una persona o un bot, deci la verdad: sos un asistente virtual de la libreria. Nunca inventes productos, precios ni sucursales que no te devuelvan las herramientas.\n\nCategorias reales disponibles en el catalogo: musica, mas vendidos, libros infantiles, policial/thriller, ficcion general, clasicos, economia, tecnologia. Si el cliente pide algo que no encaja exacto en estas categorias, buscalo igual con la herramienta usando una palabra clave simple (ej. una palabra del genero o del titulo) antes de asumir que no hay resultados. Proba primero con la palabra mas simple y general posible (ej 'ficcion' en vez de 'novela de ficcion contemporanea'). Si de verdad no hay resultados, decilo con naturalidad ('no lo tengo cargado en este momento') en vez de excusas tipo 'problema tecnico', y ofrece una alternativa cercana del catalogo real.\n\nSegui esta logica de conversacion en capas, sin ser rigido ni robotico: 1) Si es un cliente nuevo, pregunta primero en que zona/barrio esta para poder sugerirle sucursales cercanas usando la herramienta Buscar Sucursales. 2) Pregunta sobre sus gustos de lectura o musica y usa la herramienta Buscar Catalogo para sugerirle 2 o 3 productos concretos con precio. 3) Cuando sea natural, mencionale medios de pago y promociones: Banco Nacion los sabados, 10% de ahorro (tope $10.000 por compra) mas 3 cuotas sin interes con Visa y Mastercard Credito, valido online y en sucursales. Se breve, como en un chat real de WhatsApp, no uses parrafos largos.\n\nRESULTADOS_PREVIOS_DEL_CATALOGO (buscados automaticamente con las palabras del ultimo mensaje del cliente; cada item tiene nombre, marca, precio, moneda y url_producto): {{ JSON.stringify($json.catalogo || []) }}\nSi hay resultados relevantes para lo que pidio el cliente, usalos directamente para recomendar, sin llamar a buscar_catalogo. Si algun resultado no tiene relacion con el pedido (por ejemplo coincide por una palabra suelta), descartalo. Si la lista esta vacia, la busqueda ya probo con todas las palabras del cliente: decile con naturalidad que no lo tenes cargado y ofrece una alternativa que ya conozcas de la conversacion o preguntale por otros gustos, SIN llamar a la herramienta. Solo llama a buscar_catalogo, una unica vez, si se te ocurre un sinonimo claramente distinto del tema que pidio.\n\nSUCURSALES_PREVIAS (buscadas automaticamente con las palabras del ultimo mensaje del cliente; cada item tiene el nombre de la sucursal): {{ JSON.stringify($json.sucursales || []) }}\nSi el cliente menciono una zona y hay sucursales en la lista, usalas directamente para decirle cuales tiene cerca, sin llamar a buscar_sucursales. Si la lista esta vacia o el cliente no hablo de zonas, ignorala. Llama a buscar_sucursales solo si necesitas buscar con otra palabra.\n\nFORMATO DE RESPUESTA: escribi mensajes cortos, de hasta 40 palabras, con una sola pregunta al final. Cuando pases un link de producto, escribi la URL sola, sin formato markdown (WhatsApp no lo interpreta). Para resaltar usa *negrita* con un solo asterisco a cada lado (nunca doble asterisco, ni titulos, ni listas con guiones largos)."
+          "systemMessage": "={{ $json.systemPrompt }}"
         }
       },
       "onError": "continueErrorOutput"
@@ -251,7 +204,7 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1,
       "position": [
-        1040,
+        2220,
         180
       ],
       "parameters": {
@@ -274,14 +227,16 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
-        1040,
+        2220,
         340
       ],
       "onError": "continueRegularOutput",
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO conversaciones (telefono, mensaje, respuesta) VALUES ({{ JSON.stringify($('Preparar Mensaje').item.json.fromNumber) }}, {{ JSON.stringify($('Preparar Mensaje').item.json.chatInput) }}, {{ JSON.stringify($json.output) }});",
-        "options": {}
+        "query": "INSERT INTO conversaciones (telefono, mensaje, respuesta, negocio_id, perfil) VALUES ($1, $2, $3, $4::int, $5);",
+        "options": {
+          "queryReplacement": "={{ [ $('Preparar Mensaje').first().json.fromNumber, $('Preparar Mensaje').first().json.rawInput, $json.output, $('Resolver negocio').first().json.id, ($('Definir perfil').first().json.perfil && $('Definir perfil').first().json.perfil.codigo) || '' ] }}"
+        }
       },
       "credentials": {
         "postgres": {
@@ -296,7 +251,7 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1,
       "position": [
-        1040,
+        2220,
         480
       ],
       "parameters": {
@@ -311,6 +266,191 @@
           "id": "3DcUeVFZlgEIWCi3",
           "name": "Bot Librerias - WhatsApp API"
         }
+      }
+    },
+    {
+      "id": "resolverNeg",
+      "name": "Resolver negocio",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        620,
+        260
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH cod AS (SELECT lower(substring($1::text from '#([A-Za-z0-9_]+)')) AS c), n_cod AS (SELECT n.* FROM negocios n, cod WHERE n.activo AND n.codigo = cod.c), up AS (INSERT INTO sesiones (telefono, negocio_id) SELECT $2::text, id FROM n_cod ON CONFLICT (telefono) DO UPDATE SET negocio_id = EXCLUDED.negocio_id, perfil_codigo = NULL, actualizado_en = now() RETURNING negocio_id), n_ses AS (SELECT n.* FROM negocios n JOIN sesiones s ON s.negocio_id = n.id WHERE s.telefono = $2::text AND n.activo), n_def AS (SELECT * FROM negocios WHERE es_default AND activo LIMIT 1) SELECT r.*, CASE WHEN EXISTS (SELECT 1 FROM n_cod) THEN NULL ELSE (SELECT s.perfil_codigo FROM sesiones s WHERE s.telefono = $2::text) END AS perfil_codigo FROM (SELECT * FROM n_cod UNION ALL SELECT * FROM n_ses WHERE NOT EXISTS (SELECT 1 FROM n_cod) UNION ALL SELECT * FROM n_def WHERE NOT EXISTS (SELECT 1 FROM n_cod) AND NOT EXISTS (SELECT 1 FROM n_ses)) r LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $('Preparar Mensaje').first().json.rawInput, $('Preparar Mensaje').first().json.fromNumber ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "tzDMLSFOa4P3tdEq",
+          "name": "Yenny El Ateneo - Postgres Railway"
+        }
+      }
+    },
+    {
+      "id": "armarPrompt",
+      "name": "Armar prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Nodo \"Armar prompt\" (Code) del workflow de Leonardo.\n// Arma el prompt del asistente a partir de la ficha del negocio (tabla negocios)\n// y de los datos buscados para este mensaje (catalogo y sucursales).\n// Nada de lo que depende de un cliente concreto vive aca: todo sale de la ficha.\nconst n = $('Resolver negocio').first().json;\nconst d = $('Definir perfil').first().json;      // { perfil, perfiles, preguntar }\nconst perfil = d.perfil || null;\nconst perfiles = d.perfiles || [];\nconst pre = $input.first().json || {};\nconst catalogo = Array.isArray(pre.catalogo) ? pre.catalogo : [];\nconst sucursales = Array.isArray(pre.sucursales) ? pre.sucursales : [];\n\nconst partes = [];\n\npartes.push(\n  `Sos Leonardo, el asistente virtual de ${n.nombre}. Atendés a los clientes por WhatsApp. ` +\n  'Tu tono es cálido, cercano y profesional, como un buen librero de mostrador: escuchás antes de recomendar. ' +\n  'Hablás en español rioplatense (voseo) con mensajes cortos de chat.'\n);\nif (n.descripcion) partes.push(`Sobre ${n.nombre}: ${n.descripcion}`);\n\npartes.push(\n  'En el primer mensaje de una conversación nueva presentate brevemente como Leonardo. ' +\n  'Si el cliente te pregunta si sos una persona o un bot, decí la verdad: sos un asistente virtual.'\n);\n\npartes.push(\n  'REGLAS DE VERDAD: nunca inventes productos, autores, precios, stock, sucursales, horarios ni promociones. ' +\n  'Usá solo los datos que figuran en este mensaje. Si algo no está, decilo con naturalidad (\"eso no lo tengo cargado\") ' +\n  'y ofrecé una alternativa real o preguntale por otros gustos.'\n);\n\nif (d.preguntar) {\n  // negocio con varios tipos de cliente y todavia no sabemos cual es\n  partes.push(\n    'TODAVÍA NO SABÉS QUÉ TIPO DE CLIENTE ES. Saludá, presentate y preguntale con naturalidad cuál es, sin armar un menú numerado. ' +\n    'Los tipos de cliente que atendés son: ' + perfiles.map(p => p.nombre).join('; ') + '. ' +\n    'No recomiendes productos todavía y hacé una sola pregunta.'\n  );\n  partes.push('FORMATO: mensajes de hasta 40 palabras. Podés usar algún emoji, con moderación.');\n  return [{ json: { systemPrompt: partes.join('\\n\\n') } }];\n}\nif (perfil) partes.push(`TIPO DE CLIENTE: ${perfil.nombre}. ${perfil.instrucciones}`);\n\npartes.push(\n  'RESULTADOS_DEL_CATALOGO (buscados automáticamente con las palabras del último mensaje del cliente; cada item tiene ' +\n  'nombre, marca o autor, editorial, canal, categoría, precio, stock, url_producto y una descripción breve): ' + JSON.stringify(catalogo) + '\\n' +\n  'Si hay resultados que sirvan para lo que pidió el cliente, recomendá 2 o 3 con su precio. Descartá los que no tengan ' +\n  'relación con el pedido (por ejemplo, los que coinciden por una palabra suelta). Si la lista está vacía o no sirve, ' +\n  'decile que eso no lo tenés cargado y ofrecé otra cosa. Si el cliente se refiere a algo ya mencionado en la conversación ' +\n  '(por ejemplo \"el primero\"), respondé con los datos de la conversación.'\n);\n\npartes.push(\n  n.mostrar_links\n    ? 'Cuando recomiendes un producto con url_producto, pasá la URL sola en una línea aparte, sin formato markdown (WhatsApp no lo interpreta).'\n    : 'No pases links de productos.'\n);\npartes.push(\n  'Los precios están en pesos argentinos: mostralos tal cual, con signo $ y punto de miles. ' +\n  'Si stock es un número mayor a 0 podés decir que hay disponible, pero no prometas cantidades.'\n);\n\nif (sucursales.length) {\n  partes.push(\n    'SUCURSALES_RELEVANTES: ' + JSON.stringify(sucursales) + '\\n' +\n    'Si el cliente quiere retirar, comprar en un local o saber dónde quedan, usalas. Pasá nombre y dirección; ' +\n    'si hay whatsapp, escribí el link https://wa.me/ seguido del número; si hay telefono, pasalo.'\n  );\n}\n\npartes.push(\n  n.pregunta_zona\n    ? 'Si el cliente quiere comprar o retirar en un local, preguntale qué sucursal o zona le queda más cómoda. Nunca arranques la conversación preguntando por la zona.'\n    : 'No preguntes por la zona ni por la sucursal, salvo que el cliente quiera retirar o te consulte por locales.'\n);\n\npartes.push(\n  n.promos\n    ? `Promociones y medios de pago: ${n.promos} Mencionalas solo cuando sea natural o te pregunten.`\n    : 'No tenés información de promociones ni de medios de pago: si preguntan, decí que lo consulten con la librería. No inventes descuentos.'\n);\nif (n.retiro_envio) partes.push(`Retiro y envío: ${n.retiro_envio}`);\nif (n.notas) partes.push(n.notas);\n\npartes.push(\n  'FORMATO: mensajes de hasta 40 palabras, con una sola pregunta al final. Para resaltar usá *negrita* con un solo asterisco ' +\n  '(nunca doble), sin títulos ni listas largas. Podés usar algún emoji, con moderación.'\n);\npartes.push('Tenés la herramienta hora_actual: usala solo si el cliente pregunta qué día u hora es, o si están abiertos ahora.');\n\nreturn [{ json: { systemPrompt: partes.join('\\n\\n') } }];\n"
+      }
+    },
+    {
+      "id": "toolHora",
+      "name": "hora_actual",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [
+        2220,
+        520
+      ],
+      "parameters": {
+        "name": "hora_actual",
+        "description": "Devuelve el dia de la semana y la hora actual en Argentina. Usala solo si el cliente pregunta que dia u hora es, o si estan abiertos ahora.",
+        "language": "javaScript",
+        "jsCode": "return new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', weekday: 'long', hour: '2-digit', minute: '2-digit' });"
+      }
+    },
+    {
+      "id": "cargarPerf",
+      "name": "Cargar perfiles",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        800,
+        260
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT coalesce(json_agg(json_build_object('codigo', codigo, 'nombre', nombre, 'pista', pista, 'canales', canales, 'instrucciones', instrucciones) ORDER BY orden), '[]'::json) AS perfiles FROM perfiles WHERE negocio_id = $1::int;",
+        "options": {
+          "queryReplacement": "={{ [ $('Resolver negocio').first().json.id ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "tzDMLSFOa4P3tdEq",
+          "name": "Yenny El Ateneo - Postgres Railway"
+        }
+      }
+    },
+    {
+      "id": "ifClasif",
+      "name": "Hay que clasificar",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        980,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.perfiles || []).length > 1 && !$('Resolver negocio').first().json.perfil_codigo && !/^(hola|buen|hey|que tal|qué tal)[\\wáéíóúñ\\s,!¡.]{0,25}$/i.test($('Preparar Mensaje').first().json.chatInput) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "clasif",
+      "name": "Clasificar tipo de cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        140
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 15, temperature: 0, system: 'Clasificás el tipo de cliente de un comercio a partir de lo que escribe. Códigos posibles:\\n' + $json.perfiles.map(p => p.codigo + ': ' + p.pista).join('\\n') + '\\nRespondé SOLO con el código que mejor encaja. Si el mensaje no alcanza para saberlo, respondé: ninguno.', messages: [{ role: 'user', content: $('Preparar Mensaje').first().json.chatInput }] }) }}",
+        "options": {
+          "timeout": 6000
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "Jxbbx5luUP0NB5VS",
+          "name": "Yenny El Ateneo - Anthropic Claude"
+        }
+      }
+    },
+    {
+      "id": "guardarPerf",
+      "name": "Guardar perfil",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1380,
+        140
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH u AS (INSERT INTO sesiones (telefono, negocio_id, perfil_codigo) SELECT $1::text, $3::int, $2::text WHERE EXISTS (SELECT 1 FROM perfiles WHERE negocio_id = $3::int AND codigo = $2::text) ON CONFLICT (telefono) DO UPDATE SET perfil_codigo = EXCLUDED.perfil_codigo, actualizado_en = now() RETURNING perfil_codigo) SELECT (SELECT perfil_codigo FROM u) AS perfil_codigo;",
+        "options": {
+          "queryReplacement": "={{ [ $('Preparar Mensaje').first().json.fromNumber, (($json.content && $json.content[0] && $json.content[0].text) || '').trim().toLowerCase().replace(/[^a-z_]/g, ''), $('Resolver negocio').first().json.id ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "tzDMLSFOa4P3tdEq",
+          "name": "Yenny El Ateneo - Postgres Railway"
+        }
+      }
+    },
+    {
+      "id": "defPerfil",
+      "name": "Definir perfil",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Nodo \"Definir perfil\" (Code): junta el tipo de cliente que ya tenia la sesion con el que recien clasifico el bot.\n// Si el negocio tiene varios tipos de cliente y todavia no sabemos cual es, marca \"preguntar\".\nconst base = $('Resolver negocio').first().json;\nconst perfiles = $('Cargar perfiles').first().json.perfiles || [];\n\nlet codigo = base.perfil_codigo || null;\ntry {\n  // este nodo solo corrio si hubo que clasificar\n  const g = $('Guardar perfil').first().json;\n  if (g && g.perfil_codigo) codigo = g.perfil_codigo;\n} catch (e) { /* no se clasifico en este mensaje */ }\n\nconst perfil = perfiles.find(p => p.codigo === codigo) || null;\nreturn [{ json: { perfil, perfiles, preguntar: perfiles.length > 1 && !perfil } }];\n"
       }
     }
   ],
@@ -346,18 +486,7 @@
       "main": [
         [
           {
-            "node": "Buscar en catalogo (previo)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Buscar en catalogo (previo)": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
+            "node": "Resolver negocio",
             "type": "main",
             "index": 0
           }
@@ -409,7 +538,7 @@
         ]
       ]
     },
-    "Buscar Catalogo": {
+    "hora_actual": {
       "ai_tool": [
         [
           {
@@ -420,12 +549,96 @@
         ]
       ]
     },
-    "Buscar Sucursales": {
-      "ai_tool": [
+    "Resolver negocio": {
+      "main": [
+        [
+          {
+            "node": "Cargar perfiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar datos del mensaje": {
+      "main": [
+        [
+          {
+            "node": "Armar prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar prompt": {
+      "main": [
         [
           {
             "node": "AI Agent",
-            "type": "ai_tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar perfiles": {
+      "main": [
+        [
+          {
+            "node": "Hay que clasificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay que clasificar": {
+      "main": [
+        [
+          {
+            "node": "Clasificar tipo de cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Definir perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar tipo de cliente": {
+      "main": [
+        [
+          {
+            "node": "Guardar perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar perfil": {
+      "main": [
+        [
+          {
+            "node": "Definir perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Definir perfil": {
+      "main": [
+        [
+          {
+            "node": "Buscar datos del mensaje",
+            "type": "main",
             "index": 0
           }
         ]
