@@ -18,8 +18,8 @@
       },
       "credentials": {
         "whatsAppTriggerApi": {
-          "id": "kpZH8EiGsBogdCFp",
-          "name": "Yenny El Ateneo - WhatsApp Trigger"
+          "id": "Ijhrq3qriNNCF3h8",
+          "name": "Leonardo - WhatsApp Trigger"
         }
       }
     },
@@ -58,17 +58,17 @@
       "name": "Indicador escribiendo",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
       "position": [
         440,
         100
       ],
-      "onError": "continueRegularOutput",
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "79CnjSiYD0uLR9pU"
+          "value": "QZl7o5sFwKGVVgEz"
         },
         "options": {
           "waitForSubWorkflow": false
@@ -121,11 +121,11 @@
       "name": "Buscar datos del mensaje",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
       "position": [
         1780,
         260
       ],
-      "onError": "continueRegularOutput",
       "parameters": {
         "operation": "executeQuery",
         "query": "WITH palabras AS (SELECT DISTINCT p FROM (SELECT unnest(string_to_array(lower(regexp_replace($1::text, '[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ ]', ' ', 'g')), ' ')) AS p) x WHERE length(p) > 2 AND p !~ '^[0-9]+$' AND p <> ALL (ARRAY['quiero','busco','buscando','necesito','tenes','tenés','tienen','tiene','tenga','hay','libro','libros','regalo','regalar','años','año','chico','chica','chicos','chicas','nene','nena','algo','alguno','alguna','cuanto','cuánto','precio','sale','cuesta','favor','gracias','hola','buenas','buenos','dias','días','tardes','noches','recomendas','recomendás','recomendar','mostrar','mostrame','decime','quisiera','gustaria','gustaría','queria','quería','podes','podés','pueden','ejemplo','tipo','cosa','cosas','soy','dije','sucursal','sucursales','local','locales','donde','dónde','retirar','retiro','horario','horarios','cerca'])), codigos AS (SELECT DISTINCT (regexp_matches(regexp_replace($1::text, '[-\\s]', '', 'g'), '(\\d{13}|\\d{10})', 'g'))[1] AS d), hits AS (SELECT pr.id, 1 AS w FROM productos pr JOIN palabras w ON to_tsvector('spanish', pr.nombre || ' ' || coalesce(pr.marca,'') || ' ' || coalesce(pr.editorial,'') || ' ' || replace(pr.segmento_demo,'_',' ') || ' ' || coalesce(pr.descripcion,'')) @@ plainto_tsquery('spanish', w.p) WHERE pr.negocio_id = $3::int AND pr.canal = ANY(string_to_array($4::text, ',')) UNION ALL SELECT pr.id, 100 FROM productos pr WHERE pr.negocio_id = $3::int AND pr.canal = ANY(string_to_array($4::text, ',')) AND pr.isbn IN (SELECT d FROM codigos)), r AS (SELECT pr.nombre, pr.marca, pr.editorial, pr.canal, pr.segmento_demo AS categoria, pr.precio, pr.stock, pr.url_producto, left(coalesce(pr.descripcion, ''), 220) AS descripcion, sum(h.w) AS score FROM hits h JOIN productos pr ON pr.id = h.id GROUP BY pr.id ORDER BY score DESC, pr.nombre LIMIT 5), s AS (SELECT su.nombre, su.direccion, su.telefono, su.whatsapp FROM sucursales su WHERE su.negocio_id = $3::int AND 'retail' = ANY(string_to_array($4::text, ',')) AND ($1::text ~* '(sucursal|local|donde|dónde|direcci|ubicad|ubicaci|retir|horario|cerca|queda)' OR EXISTS (SELECT 1 FROM palabras w WHERE length(w.p) > 3 AND to_tsvector('spanish', su.nombre || ' ' || coalesce(su.direccion,'')) @@ plainto_tsquery('spanish', w.p))) ORDER BY su.nombre LIMIT 10) SELECT coalesce((SELECT json_agg(json_build_object('nombre', nombre, 'marca', marca, 'editorial', editorial, 'canal', canal, 'categoria', categoria, 'precio', precio, 'stock', stock, 'url_producto', url_producto, 'descripcion', descripcion) ORDER BY score DESC) FROM r), '[]'::json) AS catalogo, coalesce((SELECT json_agg(s) FROM s), '[]'::json) AS sucursales;",
@@ -135,8 +135,8 @@
       },
       "credentials": {
         "postgres": {
-          "id": "tzDMLSFOa4P3tdEq",
-          "name": "Yenny El Ateneo - Postgres Railway"
+          "id": "HEs5Mz7a2aOViDoV",
+          "name": "Leonardo - Postgres (bot)"
         }
       }
     },
@@ -159,8 +159,8 @@
       },
       "credentials": {
         "anthropicApi": {
-          "id": "Jxbbx5luUP0NB5VS",
-          "name": "Yenny El Ateneo - Anthropic Claude"
+          "id": "lVyLWOrmGtoJBr8X",
+          "name": "Leonardo - Anthropic Claude"
         }
       }
     },
@@ -184,6 +184,7 @@
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
+      "onError": "continueErrorOutput",
       "position": [
         2000,
         260
@@ -194,8 +195,7 @@
         "options": {
           "systemMessage": "={{ $json.systemPrompt }}"
         }
-      },
-      "onError": "continueErrorOutput"
+      }
     },
     {
       "id": "waSend1",
@@ -216,8 +216,8 @@
       },
       "credentials": {
         "whatsAppApi": {
-          "id": "3DcUeVFZlgEIWCi3",
-          "name": "Bot Librerias - WhatsApp API"
+          "id": "R4ayZ9tibEk4CZlK",
+          "name": "Leonardo - WhatsApp API"
         }
       }
     },
@@ -226,11 +226,11 @@
       "name": "Registrar Conversacion",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
       "position": [
         2220,
         340
       ],
-      "onError": "continueRegularOutput",
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO conversaciones (telefono, mensaje, respuesta, negocio_id, perfil) VALUES ($1, $2, $3, $4::int, $5);",
@@ -240,14 +240,15 @@
       },
       "credentials": {
         "postgres": {
-          "id": "tzDMLSFOa4P3tdEq",
-          "name": "Yenny El Ateneo - Postgres Railway"
+          "id": "HEs5Mz7a2aOViDoV",
+          "name": "Leonardo - Postgres (bot)"
         }
       }
     },
     {
       "id": "waErr1",
       "name": "Responder error por WhatsApp",
+      "webhookId": "7ae25667-af70-4f7a-ac0c-df6702e0741d",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1,
       "position": [
@@ -263,8 +264,8 @@
       },
       "credentials": {
         "whatsAppApi": {
-          "id": "3DcUeVFZlgEIWCi3",
-          "name": "Bot Librerias - WhatsApp API"
+          "id": "R4ayZ9tibEk4CZlK",
+          "name": "Leonardo - WhatsApp API"
         }
       }
     },
@@ -286,8 +287,8 @@
       },
       "credentials": {
         "postgres": {
-          "id": "tzDMLSFOa4P3tdEq",
-          "name": "Yenny El Ateneo - Postgres Railway"
+          "id": "HEs5Mz7a2aOViDoV",
+          "name": "Leonardo - Postgres (bot)"
         }
       }
     },
@@ -340,8 +341,8 @@
       },
       "credentials": {
         "postgres": {
-          "id": "tzDMLSFOa4P3tdEq",
-          "name": "Yenny El Ateneo - Postgres Railway"
+          "id": "HEs5Mz7a2aOViDoV",
+          "name": "Leonardo - Postgres (bot)"
         }
       }
     },
@@ -381,11 +382,11 @@
       "name": "Clasificar tipo de cliente",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
       "position": [
         1180,
         140
       ],
-      "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
@@ -402,15 +403,15 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 15, temperature: 0, system: 'Clasificás el tipo de cliente de un comercio a partir de lo que escribe. Códigos posibles:\\n' + $json.perfiles.map(p => p.codigo + ': ' + p.pista).join('\\n') + '\\nRespondé SOLO con el código que mejor encaja. Si el mensaje no alcanza para saberlo, respondé: ninguno.', messages: [{ role: 'user', content: $('Preparar Mensaje').first().json.chatInput }] }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 15, temperature: 0, system: 'Clasificás el tipo de cliente de un comercio a partir de lo que escribe. Códigos posibles:\\n' + $json.perfiles.map(p => p.codigo + ': ' + p.pista).join('\\n') + '\\nRespondé SOLO con el código que mejor encaja. Si el mensaje es solo un saludo o no dice nada, respondé: ninguno. En cualquier otro caso, si no hay señales claras de librería que revende ni de institución educativa, respondé ' + $json.perfiles[0].codigo + '.', messages: [{ role: 'user', content: $('Preparar Mensaje').first().json.chatInput }] }) }}",
         "options": {
           "timeout": 6000
         }
       },
       "credentials": {
         "anthropicApi": {
-          "id": "Jxbbx5luUP0NB5VS",
-          "name": "Yenny El Ateneo - Anthropic Claude"
+          "id": "lVyLWOrmGtoJBr8X",
+          "name": "Leonardo - Anthropic Claude"
         }
       }
     },
@@ -419,11 +420,11 @@
       "name": "Guardar perfil",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
+      "alwaysOutputData": true,
       "position": [
         1380,
         140
       ],
-      "alwaysOutputData": true,
       "parameters": {
         "operation": "executeQuery",
         "query": "WITH u AS (INSERT INTO sesiones (telefono, negocio_id, perfil_codigo) SELECT $1::text, $3::int, $2::text WHERE EXISTS (SELECT 1 FROM perfiles WHERE negocio_id = $3::int AND codigo = $2::text) ON CONFLICT (telefono) DO UPDATE SET perfil_codigo = EXCLUDED.perfil_codigo, actualizado_en = now() RETURNING perfil_codigo) SELECT (SELECT perfil_codigo FROM u) AS perfil_codigo;",
@@ -433,8 +434,8 @@
       },
       "credentials": {
         "postgres": {
-          "id": "tzDMLSFOa4P3tdEq",
-          "name": "Yenny El Ateneo - Postgres Railway"
+          "id": "HEs5Mz7a2aOViDoV",
+          "name": "Leonardo - Postgres (bot)"
         }
       }
     },
