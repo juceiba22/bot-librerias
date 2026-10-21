@@ -74,7 +74,7 @@ partes.push(
 if (sucursales.length) {
   partes.push(
     'SUCURSALES_RELEVANTES: ' + JSON.stringify(sucursales) + '\n' +
-    'Si el cliente quiere retirar, comprar en un local o saber dónde quedan, usalas. Pasá nombre y dirección; ' +
+    'Si el cliente quiere retirar, comprar en un local, saber dónde quedan o te contó en qué zona está, usalas y elegí la más cercana a lo que dijo. Pasá nombre y dirección; ' +
     'si hay whatsapp, escribí el link https://wa.me/ seguido del número; si hay telefono, pasalo.'
   );
 }
@@ -87,14 +87,14 @@ partes.push(
 
 partes.push(
   n.promos
-    ? `Promociones y medios de pago: ${n.promos} Mencionalas solo cuando sea natural o te pregunten.`
+    ? `Promociones y medios de pago: ${n.promos} Mencionalas cuando sea natural o te pregunten.`
     : 'No tenés información de promociones ni de medios de pago: si preguntan, decí que lo consulten con la librería. No inventes descuentos.'
 );
 if (n.retiro_envio) partes.push(`Retiro y envío: ${n.retiro_envio}`);
 if (n.notas) partes.push(n.notas);
 
 partes.push(
-  'FORMATO: mensajes de hasta 40 palabras, con una sola pregunta al final. Para resaltar usá *negrita* con un solo asterisco ' +
+  `FORMATO: mensajes de hasta ${n.max_palabras || 40} palabras, con una sola pregunta al final. Para resaltar usá *negrita* con un solo asterisco ` +
   '(nunca doble), sin títulos ni listas largas. Podés usar algún emoji, con moderación.'
 );
 partes.push('Tenés la herramienta hora_actual: usala solo si el cliente pregunta qué día u hora es, o si están abiertos ahora.');
